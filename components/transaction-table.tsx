@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+import { useTransactions } from "@/hooks/useTransactions"
+import { getCsvExportUrl } from "@/lib/api"
+
 type RiskLevel = "Low" | "Medium" | "High"
 
 interface Transaction {
@@ -18,106 +21,67 @@ interface Transaction {
   riskLevel: RiskLevel
 }
 
-const mockTransactions: Transaction[] = [
-  {
-    id: "1",
-    sender: "0.0.123456",
-    receiver: "0.0.789012",
-    amount: 1500.5,
-    timestamp: "2025-01-04 14:32:15",
-    riskLevel: "High",
-  },
-  {
-    id: "2",
-    sender: "0.0.234567",
-    receiver: "0.0.890123",
-    amount: 250.0,
-    timestamp: "2025-01-04 14:28:42",
-    riskLevel: "Low",
-  },
-  {
-    id: "3",
-    sender: "0.0.345678",
-    receiver: "0.0.901234",
-    amount: 5000.0,
-    timestamp: "2025-01-04 14:25:18",
-    riskLevel: "High",
-  },
-  {
-    id: "4",
-    sender: "0.0.456789",
-    receiver: "0.0.012345",
-    amount: 750.25,
-    timestamp: "2025-01-04 14:20:55",
-    riskLevel: "Medium",
-  },
-  {
-    id: "5",
-    sender: "0.0.567890",
-    receiver: "0.0.123456",
-    amount: 100.0,
-    timestamp: "2025-01-04 14:15:30",
-    riskLevel: "Low",
-  },
-  {
-    id: "6",
-    sender: "0.0.678901",
-    receiver: "0.0.234567",
-    amount: 3200.75,
-    timestamp: "2025-01-04 14:10:12",
-    riskLevel: "Medium",
-  },
-  {
-    id: "7",
-    sender: "0.0.789012",
-    receiver: "0.0.345678",
-    amount: 450.0,
-    timestamp: "2025-01-04 14:05:48",
-    riskLevel: "Low",
-  },
-  {
-    id: "8",
-    sender: "0.0.890123",
-    receiver: "0.0.456789",
-    amount: 8500.0,
-    timestamp: "2025-01-04 14:00:25",
-    riskLevel: "High",
-  },
-]
+export function TransactionTable() {
+  const { data: apiTxs = [], isLoading } = useTransactions()
 
-const getRiskColor = (risk: RiskLevel) => {
-  switch (risk) {
-    case "High":
-      return "bg-red-100 text-red-700 hover:bg-red-100"
-    case "Medium":
-      return "bg-orange-100 text-orange-700 hover:bg-orange-100"
-    case "Low":
-      return "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+  // Deduplicate by sender, receiver, amount, and timestamp
+  const deduped: any[] = []
+const seen = new Set<string>()
+
+if (Array.isArray(apiTxs)) {
+  for (const t of apiTxs) {
+    if (t && typeof t === "object") {
+      const key = `${t.sender}-${t.receiver}-${t.amount}-${t.timestamp}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        deduped.push(t)
+      }
+    }
   }
 }
 
-export function TransactionTable() {
+
+  // Take first 4 transactions for sample view
+  const transactions: Transaction[] = deduped.slice(0, 4).map((t, idx) => ({
+    id: t.transactionId ?? String(idx),
+    sender: t.sender,
+    receiver: t.receiver,
+    amount: t.amount,
+    timestamp: t.timestamp ? new Date(t.timestamp).toLocaleString() : "N/A",
+    riskLevel: (t.riskLevel as RiskLevel) || "Low",
+  }))
+
   const [searchQuery, setSearchQuery] = useState("")
   const [riskFilter, setRiskFilter] = useState<string>("all")
   const [isExporting, setIsExporting] = useState(false)
 
-  const filteredTransactions = mockTransactions.filter((tx) => {
+  const filteredTransactions = transactions.filter((tx) => {
     const matchesSearch =
       tx.sender.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.receiver.toLowerCase().includes(searchQuery.toLowerCase())
-
     const matchesRisk = riskFilter === "all" || tx.riskLevel === riskFilter
-
     return matchesSearch && matchesRisk
   })
+
+  const getRiskColor = (risk: RiskLevel) => {
+    switch (risk) {
+      case "High":
+        return "bg-red-100 text-red-700 hover:bg-red-100"
+      case "Medium":
+        return "bg-orange-100 text-orange-700 hover:bg-orange-100"
+      case "Low":
+        return "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+      default:
+        return ""
+    }
+  }
 
   const handleExport = () => {
     setIsExporting(true)
     setTimeout(() => {
       setIsExporting(false)
-      // Mock CSV export
-      console.log("Exporting transactions to CSV...")
-    }, 1500)
+      window.open(getCsvExportUrl(), "_blank")
+    }, 300)
   }
 
   return (
@@ -166,51 +130,55 @@ export function TransactionTable() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sender</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Receiver
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount (HBAR)
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Timestamp
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Risk Status
-              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receiver</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (HBAR)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredTransactions.map((tx) => (
-              <tr key={tx.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-mono text-gray-900">{tx.sender}</span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-mono text-gray-900">{tx.receiver}</span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-600">{tx.timestamp}</span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge className={getRiskColor(tx.riskLevel)}>{tx.riskLevel}</Badge>
+            {isLoading ? (
+              <tr>
+                <td className="p-6 text-center" colSpan={5}>
+                  Loading transactions...
                 </td>
               </tr>
-            ))}
+            ) : filteredTransactions.length === 0 ? (
+              <tr>
+                <td className="p-6 text-center text-gray-500" colSpan={5}>
+                  No transactions found matching your criteria.
+                </td>
+              </tr>
+            ) : (
+              filteredTransactions.map((tx) => (
+                <tr key={`${tx.sender}-${tx.receiver}-${tx.amount}-${tx.timestamp}`} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-mono text-gray-900">{tx.sender}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-mono text-gray-900">{tx.receiver}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-600">{tx.timestamp}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(tx.riskLevel)}`}
+                    >
+                      {tx.riskLevel}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
-
-      {filteredTransactions.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No transactions found matching your criteria.</p>
-        </div>
-      )}
     </div>
   )
 }

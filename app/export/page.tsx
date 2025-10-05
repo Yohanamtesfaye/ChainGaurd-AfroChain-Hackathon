@@ -24,13 +24,27 @@ export default function ExportPage() {
     riskScore: true,
   })
 
-  const handleExport = () => {
-    setIsExporting(true)
-    setTimeout(() => {
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}/api/export`)
+      if (!res.ok) throw new Error('Export failed')
+
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `transactions.${exportFormat}`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+      alert('Export failed. Please try again.')
+    } finally {
       setIsExporting(false)
-      // Mock export functionality
-      alert("Export completed! File downloaded successfully.")
-    }, 2000)
+    }
   }
 
   const toggleField = (field: keyof typeof selectedFields) => {

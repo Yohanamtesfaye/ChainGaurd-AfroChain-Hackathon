@@ -1,0 +1,26 @@
+{
+  "name": "chainguard-ethiopia-backend",
+  "version": "0.1.0",
+  "description": "Backend API for ChainGuard Ethiopia Hackathon MVP (Hedera-powered transaction monitoring)",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": ["hedera", "blockchain", "express", "hackathon", "ethiopia", "chainguard"],
+  "author": "ChainGuard Ethiopia Team",
+  "license": "MIT",
+  "dependencies": {
+    "mongoose": "^7.5.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "@hashgraph/sdk": "^2.31.0",
+    "papaparse": "^5.4.1",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

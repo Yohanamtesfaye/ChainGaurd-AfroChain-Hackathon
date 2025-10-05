@@ -1,6 +1,5 @@
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { TransactionTable } from "@/components/transaction-table"
-import { RiskAlertsPanel } from "@/components/risk-alerts-panel"
 import { ChartsSection } from "@/components/charts-section"
 
 export default function DashboardPage() {
@@ -14,7 +13,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <RiskAlertsPanel />
 
         <ChartsSection />
 
