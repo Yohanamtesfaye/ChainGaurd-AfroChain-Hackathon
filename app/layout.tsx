@@ -6,8 +6,8 @@ import Providers from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'ChainGuard Dashboard',
+  description: 'Risk-monitoring & analytics for Hedera',
   generator: 'v0.app',
 }
 
