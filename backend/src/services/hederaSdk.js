@@ -7,7 +7,7 @@ const { HEDERA_ACCOUNT_ID, HEDERA_PRIVATE_KEY } = process.env;
 
 let client = null;
 
-if (HEDERA_ACCOUNT_ID && HEDERA_PRIVATE_KEY) {
+if (HEDERA_ACCOUNT_ID && HEDERA_PRIVATE_KEY) {``
   try {
     let operatorKey;
     const cleanedKey = HEDERA_PRIVATE_KEY.replace(/^0x/, '').toLowerCase();
